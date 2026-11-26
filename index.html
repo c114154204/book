@@ -3,47 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>校園二手書交換平台 - 價格 BST 模組</title>
-    <!-- 引入 PyScript -->
-    <link rel="stylesheet" href="https://pyscript.net/releases/2024.1.1/core.css">
-    <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
+    <title>校園二手書交換平台 - 純手刻價格 BST</title>
     <style>
-        body { font-family: sans-serif; max-width: 900px; margin: 30px auto; padding: 0 20px; line-height: 1.6; }
-        .card { border: 1px solid #ddd; border-radius: 8px; padding: 16px; margin-bottom: 20px; background: #f9f9f9; }
-        input, button { padding: 8px; margin: 4px; border-radius: 4px; border: 1px solid #ccc; }
-        button { background: #0066cc; color: white; border: none; cursor: pointer; }
+        body { font-family: sans-serif; max-width: 900px; margin: 30px auto; padding: 0 20px; line-height: 1.6; background: #f4f6f8; }
+        .card { border: 1px solid #ddd; border-radius: 8px; padding: 18px; margin-bottom: 20px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        input, button { padding: 8px 12px; margin: 4px; border-radius: 4px; border: 1px solid #ccc; }
+        button { background: #0066cc; color: white; border: none; cursor: pointer; font-weight: bold; }
         button:hover { background: #0052a3; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; }
+        .btn-del { background: #d9534f; padding: 4px 8px; font-size: 12px; }
+        .btn-del:hover { background: #c9302c; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-        th { background: #f0f4f8; }
-        pre { background: #222; color: #0f0; padding: 15px; border-radius: 6px; overflow-x: auto; font-size: 14px; }
+        th { background: #eef2f7; }
+        pre { background: #1e1e1e; color: #4af626; padding: 15px; border-radius: 6px; overflow-x: auto; font-size: 14px; }
     </style>
 </head>
 <body>
-    <h1>📚 校園二手書交換平台（Python 價格 BST 引擎）</h1>
+    <h1>📚 校園二手書交換平台（純手刻價格 BST 系統）</h1>
 
-    <!-- 上架書籍 -->
     <div class="card">
-        <h3>1. 上架二手書（插入 BST 節點）</h3>
+        <h3>1. 上架二手書（BST Insert）</h3>
         <input type="text" id="title" placeholder="書名 (例: 線性代數)">
         <input type="number" id="price" placeholder="價格 (例: 280)">
-        <input type="text" id="subject" placeholder="科目/分類">
+        <input type="text" id="subject" placeholder="分類 (例: 必修)">
         <input type="text" id="seller" placeholder="賣家聯絡方式">
-        <button py-click="add_book">上架書籍</button>
+        <button onclick="handleAdd()">上架書籍</button>
     </div>
 
-    <!-- 價格篩選 -->
     <div class="card">
-        <h3>2. 預算區間搜尋（BST 剪枝搜尋）</h3>
+        <h3>2. 預算區間搜尋（BST Range Search）</h3>
         <input type="number" id="min-price" placeholder="最低價格"> ~
         <input type="number" id="max-price" placeholder="最高價格">
-        <button py-click="filter_books">篩選價格</button>
-        <button py-click="reset_filter" style="background:#666;">顯示全部（中序排序）</button>
+        <button onclick="handleFilter()">篩選價格</button>
+        <button onclick="handleReset()" style="background:#666;">顯示全部（中序排序）</button>
     </div>
 
-    <!-- 書單結果 -->
     <div class="card">
-        <h3>3. 書籍列表（依價格由低到高自動排序）</h3>
+        <h3>3. 書籍列表（In-order Traversal 由便宜到貴）</h3>
         <table>
             <thead>
                 <tr>
@@ -51,24 +47,205 @@
                     <th>書名</th>
                     <th>分類</th>
                     <th>賣家</th>
+                    <th>操作</th>
                 </tr>
             </thead>
-            <tbody id="book-list">
-                <tr><td colspan="4">正在啟動 Python 環境載入資料...</td></tr>
-            </tbody>
+            <tbody id="book-list"></tbody>
         </table>
     </div>
 
-    <!-- 樹狀結構視覺化 -->
     <div class="card">
-        <h3>4. 即時 BST 樹狀結構（右子樹價格高 / 左子樹價格低）</h3>
-        <pre id="bst-visual">載入中...</pre>
+        <h3>4. 即時 BST 樹狀結構視覺化</h3>
+        <pre id="bst-visual"></pre>
     </div>
 
-    <!-- 設定 PyScript 載入外部 Python 檔案 -->
-    <py-config>
-        files = ["./book_bst.py"]
-    </py-config>
-    <script type="py" src="./main.py"></script>
+    <script>
+        // 100% 純手刻二元搜尋樹（無任何外部套件）
+        class BookNode {
+            constructor(price, title, subject, seller) {
+                this.price = price;
+                this.books = [{ title, subject, seller }];
+                this.left = null;
+                this.right = null;
+            }
+        }
+
+        class PriceBST {
+            constructor() {
+                this.root = null;
+            }
+
+            insert(price, title, subject, seller) {
+                if (this.root === null) {
+                    this.root = new BookNode(price, title, subject, seller);
+                } else {
+                    this._insertRecursive(this.root, price, title, subject, seller);
+                }
+            }
+
+            _insertRecursive(current, price, title, subject, seller) {
+                if (price < current.price) {
+                    if (current.left === null) current.left = new BookNode(price, title, subject, seller);
+                    else this._insertRecursive(current.left, price, title, subject, seller);
+                } else if (price > current.price) {
+                    if (current.right === null) current.right = new BookNode(price, title, subject, seller);
+                    else this._insertRecursive(current.right, price, title, subject, seller);
+                } else {
+                    current.books.push({ title, subject, seller });
+                }
+            }
+
+            inorderSort() {
+                const result = [];
+                this._inorderRecursive(this.root, result);
+                return result;
+            }
+
+            _inorderRecursive(node, result) {
+                if (node !== null) {
+                    this._inorderRecursive(node.left, result);
+                    for (const b of node.books) {
+                        result.push({ price: node.price, title: b.title, subject: b.subject, seller: b.seller });
+                    }
+                    this._inorderRecursive(node.right, result);
+                }
+            }
+
+            searchRange(minP, maxP) {
+                const result = [];
+                this._searchRangeRecursive(this.root, minP, maxP, result);
+                return result;
+            }
+
+            _searchRangeRecursive(node, minP, maxP, result) {
+                if (node === null) return;
+                if (node.price > minP) this._searchRangeRecursive(node.left, minP, maxP, result);
+                if (node.price >= minP && node.price <= maxP) {
+                    for (const b of node.books) {
+                        result.push({ price: node.price, title: b.title, subject: b.subject, seller: b.seller });
+                    }
+                }
+                if (node.price < maxP) this._searchRangeRecursive(node.right, minP, maxP, result);
+            }
+
+            deleteBook(price, title) {
+                this.root = this._deleteRecursive(this.root, price, title);
+            }
+
+            _deleteRecursive(node, price, title) {
+                if (node === null) return null;
+                if (price < node.price) {
+                    node.left = this._deleteRecursive(node.left, price, title);
+                } else if (price > node.price) {
+                    node.right = this._deleteRecursive(node.right, price, title);
+                } else {
+                    node.books = node.books.filter(b => b.title !== title);
+                    if (node.books.length > 0) return node;
+                    if (node.left === null) return node.right;
+                    if (node.right === null) return node.left;
+
+                    let minNode = node.right;
+                    while (minNode.left !== null) minNode = minNode.left;
+                    node.price = minNode.price;
+                    node.books = minNode.books;
+                    node.right = this._deleteNodeByPrice(node.right, minNode.price);
+                }
+                return node;
+            }
+
+            _deleteNodeByPrice(node, price) {
+                if (node === null) return null;
+                if (price < node.price) node.left = this._deleteNodeByPrice(node.left, price);
+                else if (price > node.price) node.right = this._deleteNodeByPrice(node.right, price);
+                else {
+                    if (node.left === null) return node.right;
+                    if (node.right === null) return node.left;
+                }
+                return node;
+            }
+
+            getTreeText() {
+                const lines = [];
+                this._buildTree(this.root, "", true, lines);
+                return lines.length > 0 ? lines.join("\n") : "目前樹為空";
+            }
+
+            _buildTree(node, prefix, isTail, lines) {
+                if (node === null) return;
+                if (node.right !== null) {
+                    this._buildTree(node.right, prefix + (isTail ? "│   " : "    "), false, lines);
+                }
+                const titles = node.books.map(b => b.title).join(", ");
+                lines.push(prefix + (isTail ? "└── " : "┌── ") + `$${node.price} (${titles})`);
+                if (node.left !== null) {
+                    this._buildTree(node.left, prefix + (isTail ? "    " : "│   "), true, lines);
+                }
+            }
+        }
+
+        // 初始化預設資料
+        const bst = new PriceBST();
+        bst.insert(350, "工程數學(上)", "必修", "王同學");
+        bst.insert(200, "C語言程式設計", "必修", "林同學");
+        bst.insert(500, "資料結構與演算法", "必修", "陳同學");
+        bst.insert(150, "數位邏輯設計", "必修", "張同學");
+        bst.insert(350, "電路學", "必修", "李同學");
+
+        function render(list) {
+            const tbody = document.getElementById("book-list");
+            tbody.innerHTML = "";
+            if (list.length === 0) {
+                tbody.innerHTML = "<tr><td colspan='5'>找不到符合條件的書籍</td></tr>";
+                return;
+            }
+            list.forEach(b => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>$${b.price}</td>
+                        <td>${b.title}</td>
+                        <td>${b.subject}</td>
+                        <td>${b.seller}</td>
+                        <td><button class="btn-del" onclick="handleDelete(${b.price}, '${b.title}')">售出下架</button></td>
+                    </tr>
+                `;
+            });
+        }
+
+        function updateAll() {
+            render(bst.inorderSort());
+            document.getElementById("bst-visual").innerText = bst.getTreeText();
+        }
+
+        function handleAdd() {
+            const title = document.getElementById("title").value.trim();
+            const price = parseInt(document.getElementById("price").value);
+            const subject = document.getElementById("subject").value.trim() || "一般";
+            const seller = document.getElementById("seller").value.trim() || "匿名";
+            if (!title || isNaN(price)) return alert("請輸入書名與正確價格");
+            bst.insert(price, title, subject, seller);
+            document.getElementById("title").value = "";
+            document.getElementById("price").value = "";
+            updateAll();
+        }
+
+        function handleDelete(price, title) {
+            bst.deleteBook(price, title);
+            updateAll();
+        }
+
+        function handleFilter() {
+            const minP = parseInt(document.getElementById("min-price").value) || 0;
+            const maxP = parseInt(document.getElementById("max-price").value) || 999999;
+            render(bst.searchRange(minP, maxP));
+        }
+
+        function handleReset() {
+            document.getElementById("min-price").value = "";
+            document.getElementById("max-price").value = "";
+            render(bst.inorderSort());
+        }
+
+        updateAll();
+    </script>
 </body>
 </html>
