@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>校園二手書交換平台 - 價格 BST 模組</title>
+    <!-- 引入 PyScript -->
+    <link rel="stylesheet" href="https://pyscript.net/releases/2024.1.1/core.css">
+    <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
+    <style>
+        body { font-family: sans-serif; max-width: 900px; margin: 30px auto; padding: 0 20px; line-height: 1.6; }
+        .card { border: 1px solid #ddd; border-radius: 8px; padding: 16px; margin-bottom: 20px; background: #f9f9f9; }
+        input, button { padding: 8px; margin: 4px; border-radius: 4px; border: 1px solid #ccc; }
+        button { background: #0066cc; color: white; border: none; cursor: pointer; }
+        button:hover { background: #0052a3; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background: #f0f4f8; }
+        pre { background: #222; color: #0f0; padding: 15px; border-radius: 6px; overflow-x: auto; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <h1>📚 校園二手書交換平台（Python 價格 BST 引擎）</h1>
+
+    <!-- 上架書籍 -->
+    <div class="card">
+        <h3>1. 上架二手書（插入 BST 節點）</h3>
+        <input type="text" id="title" placeholder="書名 (例: 線性代數)">
+        <input type="number" id="price" placeholder="價格 (例: 280)">
+        <input type="text" id="subject" placeholder="科目/分類">
+        <input type="text" id="seller" placeholder="賣家聯絡方式">
+        <button py-click="add_book">上架書籍</button>
+    </div>
+
+    <!-- 價格篩選 -->
+    <div class="card">
+        <h3>2. 預算區間搜尋（BST 剪枝搜尋）</h3>
+        <input type="number" id="min-price" placeholder="最低價格"> ~
+        <input type="number" id="max-price" placeholder="最高價格">
+        <button py-click="filter_books">篩選價格</button>
+        <button py-click="reset_filter" style="background:#666;">顯示全部（中序排序）</button>
+    </div>
+
+    <!-- 書單結果 -->
+    <div class="card">
+        <h3>3. 書籍列表（依價格由低到高自動排序）</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>價格</th>
+                    <th>書名</th>
+                    <th>分類</th>
+                    <th>賣家</th>
+                </tr>
+            </thead>
+            <tbody id="book-list">
+                <tr><td colspan="4">正在啟動 Python 環境載入資料...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 樹狀結構視覺化 -->
+    <div class="card">
+        <h3>4. 即時 BST 樹狀結構（右子樹價格高 / 左子樹價格低）</h3>
+        <pre id="bst-visual">載入中...</pre>
+    </div>
+
+    <!-- 設定 PyScript 載入外部 Python 檔案 -->
+    <py-config>
+        files = ["./book_bst.py"]
+    </py-config>
+    <script type="py" src="./main.py"></script>
+</body>
+</html>
